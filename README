@@ -1,0 +1,79 @@
+AutoInvoice automated invoicing system 0.1 beta by http://github.com/m4rkw
+==========================================================================
+
+Description
+===========
+
+AutoInvoice is a system for automatically generating invoices on days defined by Google Calendar events.
+
+Features:
+
+ - Saves as a Pages document so can be easily edited
+ - Very configurable
+ - Optionally send the invoice via email
+
+Installation
+============
+
+NOTE: Setup assumes an OSX system. instructions for Linux should be fairly similar but will be added at a later date.
+
+--- Installation of Zend Gdata library
+
+1. Get the latest Zend Gdata library from: http://framework.zend.com/download/gdata
+
+2. Unpack in /opt/local:
+
+cd /opt/local
+tar -zxvf ZendGdata-1.11.10.tar.gz
+
+3. Symlink to ZendGdata:
+
+cd /opt/local
+ln -s ZendGdata-1.11.10 ZendGdata
+
+4. Add this to the end of your php.ini:
+
+include_path = .:/usr/share/php:/opt/local/lib/php:/opt/local/ZendGdata/library
+
+
+Usage
+=====
+
+1. Copy config/config.php.sample to config/config.php and edit to your needs.
+
+Most params should be obvious.
+
+ calendar_entry: this is a regular expression that matches the text string that you're going to use to mark invoice days in your Google Calendar.
+ 
+ The default is:
+
+ /^Invoice ([A-Z0-9]+)$/
+
+ This would match, for example, Invoice INV001 and is probably fine for most peoples needs.
+
+2. Create a Google Calendar entry for the last invoice you sent on the date that you sent it.  Make sure that the name of the calendar entry matches
+the format you've specified for calendar_entry in config.php.  Eg:
+
+Invoice INV001
+
+3. Now create a new invoice entry for the next invoice you intend to send. It's probably a good idea to create it for today's date so you can test the program.
+
+This might be called:
+
+Invoice INV002
+
+4. Now simply run AutoInvoice.php:
+
+php AutoInvoice.php
+
+
+The program will first check your Google Calendar to see if there is an invoice entry for today.  If there isn't, it exits.  If there is, it then looks back over
+the last 3 months worth of calendar entries looking for the last time you invoiced.
+
+NOTE: There must be at least one previous invoice entry in your calendar.  If there isn't, the program will exit with an error message as it will have no way of calculating
+how much time to invoice for.
+
+Once the last invoice has been found, it then calculates all the billable days since the last invoice date up to and including the current day.  It accounts for weekends and bank holidays.
+
+It then arranges the billable dates into consecutive transactions for the invoice, and generates the invoice as per the configuration file.  This is then saved to the invoice directory
+specified in the config file, and optionally emailed to the email address that may be defined.

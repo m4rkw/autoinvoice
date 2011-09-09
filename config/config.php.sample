@@ -1,0 +1,59 @@
+<?
+$config = array(
+	// Your company details
+	'company_name' => 'J R Hartley Ltd',
+	'vat_registration_no' => '123 4567 89',
+	'address1' => '1 Letsbe Avenue',
+	'address2' => 'London EC1 1AA',
+	'telephone' => '020 8123 4567',
+	'email' => 'dev@null.x',
+
+	// Recipient details
+	'attention_of_name' => 'Bobby Billpayer',
+	'attention_of_position' => 'Beancounter',
+	'attention_of_address1' => 'Yellow Page House',
+	'attention_of_address2' => '10 Downing Street',
+	'attention_of_address3' => 'London EC1 1AA',
+
+	// Invoice details
+	'project_title' => 'My first software project',
+	'terms' => 'Payment due on receipt. Money transfer to the account detailed below:',
+
+	// Day rate in £
+	'day_rate' => '100',
+
+	// VAT tax rate
+	'vat_rate' => 20,
+
+	// Your bank details
+	'bank' => 'Grassy',
+	'bank_address' => '1 Bank road, London EC1 1AA',
+	'account_name' => 'Kermit Ltd',
+	'account_number' => '12345678',
+	'sort_code' => '12-34-56',
+
+	// Signature name
+	'signed_name' => 'Kermit Frogg',
+
+	// Format regex for calendar invoice entry
+	// This needs to put ( ) around the invoice number
+	'calendar_entry' => '/^Invoice ([A-Z0-9]+)$/',
+
+	// Google calendar authentication details
+	'google_username' => '',
+	'google_password' => '',
+
+	// Path to save new invoices to
+	'invoice_path' => '/tmp',
+
+	// Invoice file format ({{INVOICE_NUMBER}} will be replaced with the invoice number, {{DATE}} with the current date as YYYYDDMM),
+	'invoice_filename_format' => '{{DATE}} Invoice {{INVOICE_NUMBER}}.pages',
+
+	// If these are set the invoice will be emailed to the destination address.
+	// Leave the destination blank if you don't want an email.
+	'invoice_email_destination' => '',
+	'invoice_email_sender_address' => '',
+	'invoice_email_sender_name' => 'Invoice',
+	'invoice_email_subject' => 'New invoice generated: {{INVOICE_NUMBER}}',
+);
+?>
