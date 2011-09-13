@@ -17,10 +17,8 @@ if ($invoice_number = $calendar->are_we_invoicing_today()) {
 
 	$transactions = $calendar->get_days_as_invoice_transactions($billable_days);
 
-	$invoice = new Invoice;
-	$invoice->date = date('d/m/Y');
-	$invoice->invoice_number = $invoice_number;
-	
+	$invoice = new Invoice($invoice_number);
+
 	foreach ($transactions as $transaction) {
 		$invoice->add_transaction($transaction['title'], $transaction['days'], $config['day_rate']);
 	}
