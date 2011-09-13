@@ -39,6 +39,10 @@ $config = array(
 	// This needs to put ( ) around the invoice number
 	'calendar_entry' => '/^Invoice ([A-Z0-9]+)$/',
 
+	// Format regex for the calendar 'sick day' entry
+	// Can be left blank if you don't want to use this
+	'calendar_sick_entry' => '/^Off sick$/',
+
 	// Google calendar authentication details
 	'google_username' => '',
 	'google_password' => '',

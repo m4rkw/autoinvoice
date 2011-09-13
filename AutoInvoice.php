@@ -13,14 +13,14 @@ if ($invoice_number = $calendar->are_we_invoicing_today()) {
 
 	$last_invoice_date = $calendar->get_date_of_previous_invoice();
 
-	$billable_days = $calendar->get_billable_days_since($last_invoice_date);
+	$sick_days = $calendar->get_sick_days_since_previous_invoice($last_invoice_date);
+
+	$billable_days = $calendar->get_billable_days_since($last_invoice_date, $sick_days);
 
 	$transactions = $calendar->get_days_as_invoice_transactions($billable_days);
 
-	$invoice = new Invoice;
-	$invoice->date = date('d/m/Y');
-	$invoice->invoice_number = $invoice_number;
-	
+	$invoice = new Invoice($invoice_number);
+
 	foreach ($transactions as $transaction) {
 		$invoice->add_transaction($transaction['title'], $transaction['days'], $config['day_rate']);
 	}

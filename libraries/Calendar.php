@@ -60,8 +60,36 @@ class Calendar {
 		die("Unable to find a previous invoice entry in the calendar.\n");
 	}
 
+	function get_sick_days_since_previous_invoice($date) {
+		$sick_days = array();
+
+		if ($this->config['calendar_sick_entry']) {
+			$timestamp = mktime(0,0,0,substr($date,5,2),substr($date,8,2),substr($date,0,4));
+
+			$gdataCal = new Zend_Gdata_Calendar($this->client);
+			$query = $gdataCal->newEventQuery();
+			$query->setUser('default');
+			$query->setVisibility('private');
+			$query->setProjection('full');
+			$query->setOrderby('starttime');
+			$query->setStartMin(date('Y-m-d',$ts));
+			$query->setStartMax(date('Y-m-d',time()+86400));
+			foreach ($gdataCal->getCalendarEventFeed($query) as $event) {
+				if (preg_match($this->config['calendar_sick_entry'], $event->title->text, $m)) {
+					foreach ($event->when as $when) {
+						$sick_days[] = substr($when->startTime,0,10);
+					}
+				}
+			}
+		}
+
+		return $sick_days;
+	}
+
 	// return all the billable days since $date
-	function get_billable_days_since($date) {
+	function get_billable_days_since($date, $sick_days=false) {
+		if (!$sick_days) $sick_days = array();
+
 		$timestamp = mktime(0,0,0,substr($date,5,2),substr($date,8,2),substr($date,0,4));
 
 		$holidays = BankHolidays::get(date('Y',$timestamp));
@@ -71,7 +99,7 @@ class Calendar {
 		while (1) {
 			$timestamp += 86400;
 
-			if (!in_array(date('D',$timestamp),array('Sat','Sun')) && !in_array(date('Y-m-d',$timestamp),$holidays)) {
+			if (!in_array(date('D',$timestamp),array('Sat','Sun')) && !in_array(date('Y-m-d',$timestamp),$holidays) && !in_array(date('Y-m-d',$timestamp),$sick_days)) {
 				$billable_days[] = date('Y-m-d',$timestamp);
 			}
 

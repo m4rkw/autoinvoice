@@ -9,7 +9,15 @@ if ($i = $c->are_we_invoicing_today()) {
 
 	echo "\nLast invoice was on: $date\n";
 
-	$billable = $c->get_billable_days_since($date);
+	$sick_days = $c->get_sick_days_since_previous_invoice($date);
+
+	echo "\nSick days since last invoice:\n\n";
+
+	foreach ($sick_days as $day) {
+		echo $day."\n";
+	}
+
+	$billable = $c->get_billable_days_since($date, $sick_days);
 
 	echo "\nBillable days since last invoice:\n\n";
 

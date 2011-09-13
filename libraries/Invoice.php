@@ -3,7 +3,7 @@ class Invoice {
 	private $transactions = array();
 	private $invoice_template = "../data/invoice-template.xml";
 
-	function __construct() {
+	function __construct($invoice_number=false) {
 		$this->output_dir = getcwd();
 
 		chdir(dirname(__FILE__));
@@ -27,6 +27,9 @@ class Invoice {
 		foreach ($config as $key => $value) {
 			$this->$key = $value;
 		}
+
+		$this->invoice_number = $invoice_number;
+		$this->date = date('d/m/Y');
 	}
 
 	function generate($target_filename) {
