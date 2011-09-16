@@ -7,7 +7,6 @@ if (!file_exists("../config/config.php")) {
 
 $i = new Invoice;
 
-$i->date = date('d/m/Y');
 $i->invoice_number = "INV001";
 
 // Invoice transactions - name, qty, unit cost

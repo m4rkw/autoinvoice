@@ -23,6 +23,20 @@ class Calendar {
 
 	// Checks the google calendar for today and looks for an invoice entry. If there is one we return the invoice number.
 	function are_we_invoicing_today() {
+		// see if an invoice exists with today's date
+		$invoice_regex = str_replace('{{DATE}}',date('Ymd'),$this->config['invoice_file_find_by_date']);
+
+		$dh = opendir($this->config['invoice_path']);
+
+		while ($file = readdir($dh)) {
+			if (preg_match($invoice_regex,$file)) {
+				echo "Today's invoice has already been generated: $file\n";
+				return false;
+			}
+		}
+
+		closedir($dh);
+
 		$gdataCal = new Zend_Gdata_Calendar($this->client);
 		$query = $gdataCal->newEventQuery();
 		$query->setUser('default');
@@ -86,11 +100,11 @@ class Calendar {
 		return $sick_days;
 	}
 
-	// return all the billable days since $date
-	function get_billable_days_since($date, $sick_days=false) {
+	// return all the billable days from $date_from to $timestamp_to (inclusive)
+	function get_billable_days_since($date_from, $timestamp_to, $sick_days=false) {
 		if (!$sick_days) $sick_days = array();
 
-		$timestamp = mktime(0,0,0,substr($date,5,2),substr($date,8,2),substr($date,0,4));
+		$timestamp = mktime(0,0,0,substr($date_from,5,2),substr($date_from,8,2),substr($date_from,0,4));
 
 		$holidays = BankHolidays::get(date('Y',$timestamp));
 
@@ -103,7 +117,7 @@ class Calendar {
 				$billable_days[] = date('Y-m-d',$timestamp);
 			}
 
-			if (date('Y-m-d',$timestamp) == date('Y-m-d')) break;
+			if (date('Y-m-d',$timestamp) == date('Y-m-d',$timestamp_to)) break;
 		}
 
 		return $billable_days;
@@ -141,6 +155,55 @@ class Calendar {
 		$transactions[] = $transaction;
 
 		return $transactions;
+	}
+
+	function get_days_as_timesheet_entries($days) {
+		$entries = array();
+
+		foreach ($days as $day) {
+			$timestamp = mktime(0,0,0,substr($day,5,2),substr($day,8,2),substr($day,0,4));
+
+			$entries[] = array(
+				'day' => date('l',$timestamp),
+				'date' => date('j M Y',$timestamp),
+				'start' => $config['timesheet_time_start'],
+				'finish' => $config['timesheet_time_finish']
+			);
+		}
+
+		return $entries;
+	}
+
+	function are_we_timesheeting_today() {
+		// see if an timesheet exists with today's date
+		$timesheet_regex = str_replace('{{DATE}}',date('Ymd',time()+($this->config['timesheet_lead_time_days'] * 86400)),$this->config['timesheet_file_find_by_date']);
+
+		$dh = opendir($this->config['timesheet_path']);
+
+		while ($file = readdir($dh)) {
+			if (preg_match($timesheet_regex,$file)) { 
+				echo "Today's timesheet has already been generated: $file\n";
+				return false;
+			} 
+		}
+	
+		closedir($dh);
+
+		$gdataCal = new Zend_Gdata_Calendar($this->client);
+		$query = $gdataCal->newEventQuery();
+		$query->setUser('default');
+		$query->setVisibility('private');
+		$query->setProjection('full');
+		$query->setOrderby('starttime');
+		$query->setStartMin(date('Y-m-d',time()+($this->config['timesheet_lead_time_days'] * 86400)));
+		$query->setStartMax(date('Y-m-d',time()+((($this->config['timesheet_lead_time_days']+1) * 86400))));
+		foreach ($gdataCal->getCalendarEventFeed($query) as $event) {
+			if (preg_match($this->config['calendar_entry'], $event->title->text, $m)) {
+				return true;
+			}
+	}
+
+		return false;
 	}
 }
 ?>

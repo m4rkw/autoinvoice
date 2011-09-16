@@ -53,11 +53,44 @@ $config = array(
 	// Invoice file format ({{INVOICE_NUMBER}} will be replaced with the invoice number, {{DATE}} with the current date as YYYYDDMM),
 	'invoice_filename_format' => '{{DATE}} Invoice {{INVOICE_NUMBER}}.pages',
 
+	// Regular expression to find invoices by date
+	'invoice_file_find_by_date' => '/^{{DATE}} Invoice [A-Z0-9]+\.pages$/',
+
 	// If these are set the invoice will be emailed to the destination address.
 	// Leave the destination blank if you don't want an email.
 	'invoice_email_destination' => '',
 	'invoice_email_sender_address' => '',
 	'invoice_email_sender_name' => 'Invoice',
 	'invoice_email_subject' => 'New invoice generated: {{INVOICE_NUMBER}}',
+
+	// Timesheet details
+
+	'timesheet_name' => 'Kermit Frogg',
+	'timesheet_jobtitle' => 'Septic tank cleaner',
+	'timesheet_client' => 'Yellow Page House',
+	'timesheet_client_location' => '10 Downing Street, London, EC1 1AA',
+
+	// How many days before an invoice day to generate the timesheet. 1 == the day before
+	'timesheet_lead_time_days' => 1,
+
+	// Your normal working hours
+	'timesheet_time_start' => '09:00',
+	'timesheet_time_finish' => '17:00',
+
+	// Path to save new timesheets to
+	'timesheet_path' => '/tmp',
+
+	// Timesheet file format {{DATE}} will be replaced with the current date as YYYYDDMM),
+	'timesheet_filename_format' => '{{DATE}} Timesheet.numbers',
+
+	// Regular expression to find timesheets by date
+	'timesheet_file_find_by_date' => '/^{{DATE}} Timesheet\.numbers$/',
+
+	// If these are set the timesheet will be emailed to the destination address.
+	// Leave the destination blank if you don't want an email.
+	'timesheet_email_destination' => '',
+	'timesheet_email_sender_address' => '',
+	'timesheet_email_sender_name' => 'Timesheet',
+	'timesheet_email_subject' => 'New timesheet generated: {{DATE}}'
 );
 ?>

@@ -1,2 +1,4 @@
 config/*.php
 examples/*.pages
+examples/*.numbers
+.DS_Store
