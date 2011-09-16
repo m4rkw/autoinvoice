@@ -8,9 +8,11 @@ AutoInvoice is a system for automatically generating invoices on days defined by
 
 Features:
 
- - Saves as a Pages document so can be easily edited
+ - Saves invoices as Pages documents so they can be easily edited
+ - Saves timesheets as Numbers documents
  - Very configurable
- - Optionally send the invoice via email
+ - Optionally send the invoice/timesheet via email
+ - Supports timesheet lead-time so you can generate the timesheet n days before the invoice day
 
 Installation
 ============
@@ -62,7 +64,9 @@ This might be called:
 
 Invoice INV002
 
-4. Now simply run AutoInvoice.php:
+4. Configure the timesheet parameters (see config.php/sample for more information)
+
+5. Now simply run AutoInvoice.php:
 
 php AutoInvoice.php
 
