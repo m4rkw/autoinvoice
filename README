@@ -1,6 +1,7 @@
 AutoInvoice automated invoicing system 0.1 beta by http://github.com/m4rkw
 ==========================================================================
 
+
 Description
 ===========
 
@@ -13,6 +14,7 @@ Features:
  - Very configurable
  - Optionally send the invoice/timesheet via email
  - Supports timesheet lead-time so you can generate the timesheet n days before the invoice day
+
 
 Installation
 ============
@@ -36,6 +38,25 @@ ln -s ZendGdata-1.11.10 ZendGdata
 4. Add this to the end of your php.ini:
 
 include_path = .:/usr/share/php:/opt/local/lib/php:/opt/local/ZendGdata/library
+
+
+Running the unit tests
+======================
+
+First install phpunit:
+
+pear channel-discover pear.phpunit.de
+pear channel-discover pear.symfony-project.com
+pear channel-discover components.ez.no
+pear install components.ez.no/ConsoleTools
+pear upgrade
+pear install symfony/YAML
+pear install phpunit/PHPUnit
+
+Run the tests
+
+cd tests
+phpunit unit
 
 
 Usage

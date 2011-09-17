@@ -54,6 +54,9 @@ class BankHolidays {
 		if ($yr == 2002) { // exception year
 			$bankHols[] = "2002-06-03";
 			$bankHols[] = "2002-06-04";
+		} else if ($yr == 2012) { // exception year, queen's diamond jubilee
+			$bankHols[] = "2012-06-05";
+			$bankHols[] = "2012-06-04";
 		} else {
 			switch (date("w", strtotime("$yr-05-31 12:00:00"))) {
 				case 0:
