@@ -1,6 +1,6 @@
 <?
 class Invoice {
-	private $transactions = array();
+	public $transactions = array();
 	private $invoice_template = "../data/invoice-template.xml";
 
 	function __construct($invoice_number=false) {
