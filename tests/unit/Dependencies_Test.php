@@ -27,5 +27,9 @@ class DependenciesTest extends PHPUnit_Framework_TestCase {
 	function test_dependency_zend_gdata_calendar() {
 		Zend_Loader::loadClass('Zend_Gdata_Calendar');
 	}
+
+	function test_dependency_zip_archive() {
+		$this->assertTrue(class_exists('ZipArchive'));
+	}
 }
 ?>
