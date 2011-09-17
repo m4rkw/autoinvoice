@@ -176,8 +176,8 @@ class Calendar {
 			$entries[] = array(
 				'day' => date('l',$timestamp),
 				'date' => date('j M Y',$timestamp),
-				'start' => $config['timesheet_time_start'],
-				'finish' => $config['timesheet_time_finish']
+				'start' => $this->config['timesheet_time_start'],
+				'finish' => $this->config['timesheet_time_finish']
 			);
 		}
 

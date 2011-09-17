@@ -69,7 +69,7 @@ if ($calendar->are_we_timesheeting_today()) {
 	$timesheet->timesheet_client_location = $config['timesheet_client_location'];
 
 	foreach ($entries as $entry) {
-		$timesheet->add_day($entry['day'],$entry['date'],$config['timesheet_time_start'],$config['timesheet_time_finish']);
+		$timesheet->add_day($entry['day'],$entry['date'],$entry['start'],$entry['finish']);
 	}
 
 	$timesheet_filename = str_replace('{{DATE}}',date('Ymd',time()+($config['timesheet_lead_time_days'] * 86400)),$config['timesheet_filename_format']);
