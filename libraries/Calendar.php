@@ -215,7 +215,7 @@ class Calendar {
 			if (preg_match($this->config['calendar_entry'], $event->title->text, $m)) {
 				return true;
 			}
-	}
+		}
 
 		return false;
 	}
