@@ -1,5 +1,12 @@
-AutoInvoice automated invoicing system 0.1 beta by http://github.com/m4rkw
+AutoInvoice automated invoicing system 0.2 beta by http://github.com/m4rkw
 ==========================================================================
+
+
+ChangeLog
+=========
+
+0.2 - Various tweaks and bugfixes, added unit tests and implemented timesheet functionality.
+0.1 - Initial beta, invoices only.
 
 
 Description
