@@ -1,6 +1,6 @@
 <?
 class Timesheet {
-	private $days = array();
+	public $days = array();
 	private $timesheet_template = "../data/timesheet-template.xml";
 
 	function __construct($invoice_number=false) {
