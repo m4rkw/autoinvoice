@@ -17,8 +17,6 @@ class Calendar {
 		Zend_Loader::loadClass('Zend_Gdata_ClientLogin');
 		Zend_Loader::loadClass('Zend_Gdata_HttpClient');
 		Zend_Loader::loadClass('Zend_Gdata_Calendar');
-
-		$this->client = Zend_Gdata_ClientLogin::getHttpClient($this->config['google_username'], $this->config['google_password'], Zend_Gdata_Calendar::AUTH_SERVICE_NAME);
 	}
 
 	// Checks the google calendar for today and looks for an invoice entry. If there is one we return the invoice number.
@@ -36,6 +34,10 @@ class Calendar {
 		}
 
 		closedir($dh);
+
+		if (!isset($this->client)) {
+			$this->client = Zend_Gdata_ClientLogin::getHttpClient($this->config['google_username'], $this->config['google_password'], Zend_Gdata_Calendar::AUTH_SERVICE_NAME);
+		}
 
 		$gdataCal = new Zend_Gdata_Calendar($this->client);
 		$query = $gdataCal->newEventQuery();
@@ -55,6 +57,10 @@ class Calendar {
 
 	// Return the most recent invoice before the one being generated today
 	function get_date_of_previous_invoice() {
+		if (!isset($this->client)) {
+			$this->client = Zend_Gdata_ClientLogin::getHttpClient($this->config['google_username'], $this->config['google_password'], Zend_Gdata_Calendar::AUTH_SERVICE_NAME);
+		}
+
 		$gdataCal = new Zend_Gdata_Calendar($this->client);
 		$query = $gdataCal->newEventQuery();
 		$query->setUser('default');
@@ -79,6 +85,10 @@ class Calendar {
 
 		if ($this->config['calendar_sick_entry']) {
 			$timestamp = mktime(0,0,0,substr($date,5,2),substr($date,8,2),substr($date,0,4));
+
+			if (!isset($this->client)) {
+				$this->client = Zend_Gdata_ClientLogin::getHttpClient($this->config['google_username'], $this->config['google_password'], Zend_Gdata_Calendar::AUTH_SERVICE_NAME);
+			}
 
 			$gdataCal = new Zend_Gdata_Calendar($this->client);
 			$query = $gdataCal->newEventQuery();
@@ -188,6 +198,10 @@ class Calendar {
 		}
 	
 		closedir($dh);
+
+		if (!isset($this->client)) {
+			$this->client = Zend_Gdata_ClientLogin::getHttpClient($this->config['google_username'], $this->config['google_password'], Zend_Gdata_Calendar::AUTH_SERVICE_NAME);
+		}
 
 		$gdataCal = new Zend_Gdata_Calendar($this->client);
 		$query = $gdataCal->newEventQuery();
