@@ -43,6 +43,10 @@ $config = array(
 	// Can be left blank if you don't want to use this
 	'calendar_sick_entry' => '/^Off sick$/',
 
+	// Format regex for the calendar 'holiday' entry
+	// Can be left blank if you don't want to use this
+	'calendar_holiday_entry' => '/^Holiday$/',
+
 	// Google calendar authentication details
 	'google_username' => '',
 	'google_password' => '',

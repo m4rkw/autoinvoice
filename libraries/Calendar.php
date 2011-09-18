@@ -19,6 +19,25 @@ class Calendar {
 		Zend_Loader::loadClass('Zend_Gdata_Calendar');
 	}
 
+	function get_calendar_events($ts_from=false, $ts_to=false) {
+		if (!$ts_from) $ts_from = time();
+		if (!$ts_to) $ts_to = time();
+
+		if (!isset($this->client)) {
+			$this->client = Zend_Gdata_ClientLogin::getHttpClient($this->config['google_username'], $this->config['google_password'], Zend_Gdata_Calendar::AUTH_SERVICE_NAME);
+		}
+
+		$gdataCal = new Zend_Gdata_Calendar($this->client);
+		$query = $gdataCal->newEventQuery();
+		$query->setUser('default');
+		$query->setVisibility('private');
+		$query->setProjection('full');
+		$query->setOrderby('starttime');
+		$query->setStartMin(date('Y-m-d',$ts_from));
+		$query->setStartMax(date('Y-m-d',($ts_to + 86400)));
+		return $gdataCal->getCalendarEventFeed($query);
+	}
+
 	// Checks the google calendar for today and looks for an invoice entry. If there is one we return the invoice number.
 	function are_we_invoicing_today() {
 		// see if an invoice exists with today's date
@@ -35,41 +54,18 @@ class Calendar {
 
 		closedir($dh);
 
-		if (!isset($this->client)) {
-			$this->client = Zend_Gdata_ClientLogin::getHttpClient($this->config['google_username'], $this->config['google_password'], Zend_Gdata_Calendar::AUTH_SERVICE_NAME);
-		}
-
-		$gdataCal = new Zend_Gdata_Calendar($this->client);
-		$query = $gdataCal->newEventQuery();
-		$query->setUser('default');
-		$query->setVisibility('private');
-		$query->setProjection('full');
-		$query->setOrderby('starttime');
-		$query->setStartMin(date('Y-m-d'));
-		$query->setStartMax(date('Y-m-d',time()+86400));
-		foreach ($gdataCal->getCalendarEventFeed($query) as $event) {
+		foreach ($this->get_calendar_events() as $event) {
 			if (preg_match($this->config['calendar_entry'], $event->title->text, $m)) {
 				return $m[1];
 			}
 		}
+
 		return false;
 	}
 
 	// Return the most recent invoice before the one being generated today
 	function get_date_of_previous_invoice() {
-		if (!isset($this->client)) {
-			$this->client = Zend_Gdata_ClientLogin::getHttpClient($this->config['google_username'], $this->config['google_password'], Zend_Gdata_Calendar::AUTH_SERVICE_NAME);
-		}
-
-		$gdataCal = new Zend_Gdata_Calendar($this->client);
-		$query = $gdataCal->newEventQuery();
-		$query->setUser('default');
-		$query->setVisibility('private');
-		$query->setProjection('full');
-		$query->setOrderby('starttime');
-		$query->setStartMin(date('Y-m-d',time()-(86400 * 90)));
-		$query->setStartMax(date('Y-m-d'));
-		foreach ($gdataCal->getCalendarEventFeed($query) as $event) {
+		foreach ($this->get_calendar_events(time()-(86400 * 90), time()-86400) as $event) {
 			if (preg_match($this->config['calendar_entry'], $event->title->text, $m)) {
 				foreach ($event->when as $when) {
 					return substr($when->startTime,0,10);
@@ -80,41 +76,58 @@ class Calendar {
 		die("Unable to find a previous invoice entry in the calendar.\n");
 	}
 
-	function get_sick_days_since_previous_invoice($date) {
-		$sick_days = array();
+	function get_date_of_next_invoice($last_invoice) {
+		$ts = strtotime($last_invoice) + 86400;
 
-		if ($this->config['calendar_sick_entry']) {
-			$timestamp = mktime(0,0,0,substr($date,5,2),substr($date,8,2),substr($date,0,4));
-
-			if (!isset($this->client)) {
-				$this->client = Zend_Gdata_ClientLogin::getHttpClient($this->config['google_username'], $this->config['google_password'], Zend_Gdata_Calendar::AUTH_SERVICE_NAME);
+		foreach ($this->get_calendar_events($ts, $ts + (90 * 86400)) as $event) {
+			if (preg_match($this->config['calendar_entry'], $event->title->text, $m)) {
+				foreach ($event->when as $when) {
+					return substr($when->startTime,0,10);
+				}
 			}
+		}
 
-			$gdataCal = new Zend_Gdata_Calendar($this->client);
-			$query = $gdataCal->newEventQuery();
-			$query->setUser('default');
-			$query->setVisibility('private');
-			$query->setProjection('full');
-			$query->setOrderby('starttime');
-			$query->setStartMin(date('Y-m-d',$ts));
-			$query->setStartMax(date('Y-m-d',time()+86400));
-			foreach ($gdataCal->getCalendarEventFeed($query) as $event) {
-				if (preg_match($this->config['calendar_sick_entry'], $event->title->text, $m)) {
+		return false;
+	}
+
+	function get_calendar_marked_entries_for_period($date_from, $timestamp_to, $regex) {
+		if (!$timestamp_to) $timestamp_to = time();
+
+		$days = array();
+
+		if ($regex) {
+			foreach ($this->get_calendar_events(strtotime($date_from), $timestamp_to) as $event) {
+				if (preg_match($regex, $event->title->text, $m)) {
 					foreach ($event->when as $when) {
-						$sick_days[] = substr($when->startTime,0,10);
+						$ts = strtotime(substr($when->startTime,0,10));
+
+						while (1) {
+							$days[] = date('Y-m-d',$ts);
+							$ts += 86400;
+							if (date('Y-m-d',$ts) == substr($when->endTime,0,10)) break;
+						}
 					}
 				}
 			}
 		}
 
-		return $sick_days;
+		return $days;
+	}
+
+	function get_sick_days_for_period($date_from, $timestamp_to=false) {
+		return $this->get_calendar_marked_entries_for_period($date_from, $timestamp_to, $this->config['calendar_sick_entry']);
+	}
+
+	function get_holiday_days_for_period($date_from, $timestamp_to=false) {
+		return $this->get_calendar_marked_entries_for_period($date_from, $timestamp_to, $this->config['calendar_holiday_entry']);
 	}
 
 	// return all the billable days from $date_from to $timestamp_to (inclusive)
-	function get_billable_days_since($date_from, $timestamp_to, $sick_days=false) {
+	function get_billable_days_since($date_from, $timestamp_to, $sick_days=false, $holiday_days=false) {
 		if (!$sick_days) $sick_days = array();
+		if (!$holiday_days) $holiday_days = array();
 
-		$timestamp = mktime(0,0,0,substr($date_from,5,2),substr($date_from,8,2),substr($date_from,0,4));
+		$timestamp = strtotime($date_from);
 
 		$holidays = BankHolidays::get(date('Y',$timestamp));
 
@@ -123,7 +136,7 @@ class Calendar {
 		while (1) {
 			$timestamp += 86400;
 
-			if (!in_array(date('D',$timestamp),array('Sat','Sun')) && !in_array(date('Y-m-d',$timestamp),$holidays) && !in_array(date('Y-m-d',$timestamp),$sick_days)) {
+			if (!in_array(date('D',$timestamp),array('Sat','Sun')) && !in_array(date('Y-m-d',$timestamp),$holidays) && !in_array(date('Y-m-d',$timestamp),$sick_days) && !in_array(date('Y-m-d',$timestamp),$holiday_days)) {
 				$billable_days[] = date('Y-m-d',$timestamp);
 			}
 
@@ -137,7 +150,7 @@ class Calendar {
 		$transactions = array();
 
 		foreach ($days as $day) {
-			$timestamp = mktime(0,0,0,substr($day,5,2),substr($day,8,2),substr($day,0,4));
+			$timestamp = strtotime($day);
 
 			if (!isset($transaction)) {
 				$transaction = array(
@@ -171,11 +184,9 @@ class Calendar {
 		$entries = array();
 
 		foreach ($days as $day) {
-			$timestamp = mktime(0,0,0,substr($day,5,2),substr($day,8,2),substr($day,0,4));
-
 			$entries[] = array(
-				'day' => date('l',$timestamp),
-				'date' => date('j M Y',$timestamp),
+				'day' => date('l',strtotime($day)),
+				'date' => date('j M Y',strtotime($day)),
 				'start' => $this->config['timesheet_time_start'],
 				'finish' => $this->config['timesheet_time_finish']
 			);
@@ -199,19 +210,8 @@ class Calendar {
 	
 		closedir($dh);
 
-		if (!isset($this->client)) {
-			$this->client = Zend_Gdata_ClientLogin::getHttpClient($this->config['google_username'], $this->config['google_password'], Zend_Gdata_Calendar::AUTH_SERVICE_NAME);
-		}
+		foreach ($this->get_calendar_events(time()+($this->config['timesheet_lead_time_days'] * 86400), ((time()+($this->config['timesheet_lead_time_days']+1) * 86400)-86400)) as $event) {
 
-		$gdataCal = new Zend_Gdata_Calendar($this->client);
-		$query = $gdataCal->newEventQuery();
-		$query->setUser('default');
-		$query->setVisibility('private');
-		$query->setProjection('full');
-		$query->setOrderby('starttime');
-		$query->setStartMin(date('Y-m-d',time()+($this->config['timesheet_lead_time_days'] * 86400)));
-		$query->setStartMax(date('Y-m-d',time()+((($this->config['timesheet_lead_time_days']+1) * 86400))));
-		foreach ($gdataCal->getCalendarEventFeed($query) as $event) {
 			if (preg_match($this->config['calendar_entry'], $event->title->text, $m)) {
 				return true;
 			}

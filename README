@@ -1,10 +1,15 @@
-AutoInvoice automated invoicing system 0.2 beta by http://github.com/m4rkw
+AutoInvoice automated invoicing system 0.3 beta by http://github.com/m4rkw
 ==========================================================================
 
 
 ChangeLog
 =========
 
+Note: new configuration parameters have been added in version 0.3. check your config.
+
+0.3 - Refactored Calendar library and added commandline parameters.
+    - Added feature to dump the estimated value of the next invoice.
+    - Fixed bug where sick day entries were only ever validated for a single day.
 0.2 - Various tweaks and bugfixes, added unit tests and implemented timesheet functionality.
 0.1 - Initial beta, invoices only.
 
@@ -21,7 +26,6 @@ Features:
  - Very configurable
  - Optionally send the invoice/timesheet via email
  - Supports timesheet lead-time so you can generate the timesheet n days before the invoice day
-
 
 Installation
 ============
@@ -94,9 +98,19 @@ Invoice INV002
 
 4. Configure the timesheet parameters (see config.php/sample for more information)
 
-5. Now simply run AutoInvoice.php:
+5. Now you can run the main script:
 
-php AutoInvoice.php
+./autoinvoice info
+
+ - prints out the estimated value of the next invoice
+
+./autoinvoice invoice
+
+ - looks for an invoice entry in the calendar for today, if one is found it generates the invoice
+
+./autoinvoice timesheet
+
+ - looks for a timesheet entry in the calendar for today (or in the next n days based on the timesheet lead time config param), if one is found it generates it
 
 
 The program will first check your Google Calendar to see if there is an invoice entry for today.  If there isn't, it exits.  If there is, it then looks back over
