@@ -10,6 +10,7 @@ Note: new configuration parameters have been added in version 0.3. check your co
 0.3 - Refactored Calendar library and added commandline parameters.
     - Added feature to dump the estimated value of the next invoice.
     - Fixed bug where sick day entries were only ever validated for a single day.
+		- Added 'both' option to check for timesheet and invoice in one pass.
 0.2 - Various tweaks and bugfixes, added unit tests and implemented timesheet functionality.
 0.1 - Initial beta, invoices only.
 
