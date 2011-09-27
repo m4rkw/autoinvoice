@@ -14,7 +14,7 @@ class AutoInvoice {
 	}
 
 	function usage() {
-		echo "Usage: autoinvoice <invoice|timesheet|both|info>\n";
+		echo "Usage: autoinvoice <invoice|timesheet|both|info|today>\n";
 		exit;
 	}
 
@@ -128,6 +128,19 @@ Much love,
 		echo s(4)."subtotal: £$subtotal\n";
 		echo s(9)."vat: £$vat\n";
 		echo s(7)."total: £$total\n\n";
+	}
+
+	function today() {
+		$last_invoice_date = $this->calendar->get_date_of_previous_invoice();
+		$next_invoice_date = date('Y-m-d');
+
+		$sick_days = $this->calendar->get_sick_days_for_period($last_invoice_date, strtotime($next_invoice_date));
+		$holiday_days = $this->calendar->get_holiday_days_for_period($last_invoice_date, strtotime($next_invoice_date));
+		$billable_days = $this->calendar->get_billable_days_since($last_invoice_date, strtotime($next_invoice_date), $sick_days, $holiday_days);
+
+		$subtotal = count($billable_days) * $this->config['day_rate'];
+
+		die("$subtotal\n");
 	}
 }
 
