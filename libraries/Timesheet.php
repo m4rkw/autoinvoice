@@ -38,12 +38,11 @@ class Timesheet {
 
 		if ($n <1) {
 			die("No work days added to timesheet.\n");
-		} else if ($n >30) {
+		} else if ($n >60) {
 			die("Timesheets are currently limited to a maximum of 30 work days.\n");
 		}
 
 		foreach ($this->days as $i => $workday) {
-			$this->template = str_replace('{{{TIMESHEET_DAY'.($i+1).'}}}',$workday['day'],$this->template);
 			$this->template = str_replace('{{{TIMESHEET_DATE'.($i+1).'}}}',$workday['date'],$this->template);
 			$this->template = str_replace('{{{TIMESHEET_START'.($i+1).'}}}',$workday['start'],$this->template);
 			$this->template = str_replace('{{{TIMESHEET_END'.($i+1).'}}}',$workday['finish'],$this->template);
@@ -66,8 +65,7 @@ class Timesheet {
 			$this->template = str_replace('{{{TIMESHEET_HOURS'.($i+1).'}}}',$hours,$this->template);
 		}
 
-		for ($j=$i+1; $j<=30; $j++) {
-			$this->template = str_replace('{{{TIMESHEET_DAY'.($j+1).'}}}',null,$this->template);
+		for ($j=$i+1; $j<=60; $j++) {
 			$this->template = str_replace('{{{TIMESHEET_DATE'.($j+1).'}}}',null,$this->template);
 			$this->template = str_replace('{{{TIMESHEET_START'.($j+1).'}}}',null,$this->template);
 			$this->template = str_replace('{{{TIMESHEET_END'.($j+1).'}}}',null,$this->template);
@@ -75,7 +73,7 @@ class Timesheet {
 		}
 
 		foreach ($this as $fieldname => $value) {
-			if ($fieldname != 'template') {
+			if (!in_array($fieldname, array('template','days'))) {
 				$this->template = str_replace('{{{'.strtoupper($fieldname).'}}}',$value,$this->template);
 			}
 		}
