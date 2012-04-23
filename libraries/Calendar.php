@@ -19,7 +19,7 @@ class Calendar {
 		Zend_Loader::loadClass('Zend_Gdata_Calendar');
 	}
 
-	function get_calendar_events($ts_from=false, $ts_to=false) {
+	function get_calendar_events($ts_from=false, $ts_to=false, $reverse=false) {
 		if (!$ts_from) $ts_from = time();
 		if (!$ts_to) $ts_to = time();
 
@@ -35,6 +35,15 @@ class Calendar {
 		$query->setOrderby('starttime');
 		$query->setStartMin(date('Y-m-d',$ts_from));
 		$query->setStartMax(date('Y-m-d',($ts_to + 86400)));
+
+		if ($reverse) {
+			$items = array();
+			foreach ($gdataCal->getCalendarEventFeed($query) as $item) {
+				$items[] = $item;
+			}
+			return array_reverse($items);
+		}
+
 		return $gdataCal->getCalendarEventFeed($query);
 	}
 
@@ -79,7 +88,7 @@ class Calendar {
 	function get_date_of_next_invoice($last_invoice) {
 		$ts = strtotime($last_invoice) + 86400;
 
-		foreach ($this->get_calendar_events($ts, $ts + (90 * 86400)) as $event) {
+		foreach ($this->get_calendar_events($ts, $ts + (90 * 86400), true) as $event) {
 			if (preg_match($this->config['calendar_entry'], $event->title->text, $m)) {
 				foreach ($event->when as $when) {
 					return substr($when->startTime,0,10);

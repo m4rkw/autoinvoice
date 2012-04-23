@@ -18,15 +18,23 @@ class AutoInvoice {
 		exit;
 	}
 
-	function invoice() {
-		if ($invoice_number = $this->calendar->are_we_invoicing_today()) {
+	function invoice($justdoit=false) {
+		if ($invoice_number = $this->calendar->are_we_invoicing_today() || $justdoit) {
 
 			$last_invoice_date = $this->calendar->get_date_of_previous_invoice();
 
-			$sick_days = $this->calendar->get_sick_days_for_period($last_invoice_date);
-			$holiday_days = $this->calendar->get_holiday_days_for_period($last_invoice_date);
+			if ($justdoit) {
+				$next_invoice_date = $this->calendar->get_date_of_next_invoice($last_invoice_date);
+				$invoice_date = strtotime($next_invoice_date);
+				$invoice_number = $this->calendar->invoice_number;
+			} else {
+				$invoice_date = time();
+			}
 
-			$billable_days = $this->calendar->get_billable_days_since($last_invoice_date, time(), $sick_days, $holiday_days);
+			$sick_days = $this->calendar->get_sick_days_for_period($last_invoice_date, $invoice_date);
+			$holiday_days = $this->calendar->get_holiday_days_for_period($last_invoice_date, $invoice_date);
+
+			$billable_days = $this->calendar->get_billable_days_since($last_invoice_date, $invoice_date, $sick_days, $holiday_days);
 
 			$transactions = $this->calendar->get_days_as_invoice_transactions($billable_days);
 
@@ -36,7 +44,7 @@ class AutoInvoice {
 				$invoice->add_transaction($transaction['title'], $transaction['days'], $this->config['day_rate']);
 			}
 
-			$invoice_filename = str_replace('{{DATE}}',date('Ymd'),$this->config['invoice_filename_format']);
+			$invoice_filename = str_replace('{{DATE}}',date('Ymd',$invoice_date),$this->config['invoice_filename_format']);
 			$invoice_filename = str_replace('{{INVOICE_NUMBER}}',$invoice_number,$invoice_filename);
 
 			$invoice->generate($this->config['invoice_path'].'/'.$invoice_filename);
@@ -50,7 +58,7 @@ class AutoInvoice {
 				$mail->SetFrom($this->config['invoice_email_sender_address'], $this->config['invoice_email_sender_name']);
 				$mail->AddAddress($this->config['invoice_email_destination']);
 				$mail->Subject = str_replace('{{INVOICE_NUMBER}}',$invoice_number,$this->config['invoice_email_subject']);
-				$mail->Subject = str_replace('{{DATE}}',date('d.m.Y'),$mail->Subject);
+				$mail->Subject = str_replace('{{DATE}}',date('d.m.Y',$invoice_date),$mail->Subject);
 				$mail->Body = "Hi there,
 
 Your new invoice $invoice_number has been generated.
@@ -63,14 +71,25 @@ Much love,
 		}
 	}
 
-	function timesheet() {
-		if ($this->calendar->are_we_timesheeting_today()) {
+	function timesheet($justdoit=false) {
+		if ($this->calendar->are_we_timesheeting_today() || $justdoit) {
 			$last_invoice_date = $this->calendar->get_date_of_previous_invoice();
 
-			$sick_days = $this->calendar->get_sick_days_for_period($last_invoice_date);
-			$holiday_days = $this->calendar->get_holiday_days_for_period($last_invoice_date);
+			if ($justdoit) {
+				$next_invoice_date = $this->calendar->get_date_of_next_invoice($last_invoice_date);
+				$timesheet_date = strtotime($next_invoice_date);
+			} else {
+				$timesheet_date = time();
+			}
 
-			$billable_days = $this->calendar->get_billable_days_since($last_invoice_date, time() + ($this->config['timesheet_lead_time_days'] * 86400), $sick_days, $holiday_days);
+			$sick_days = $this->calendar->get_sick_days_for_period($last_invoice_date, $timesheet_date);
+			$holiday_days = $this->calendar->get_holiday_days_for_period($last_invoice_date, $timesheet_date);
+
+			if ($justdoit) {
+				$billable_days = $this->calendar->get_billable_days_since($last_invoice_date, $timesheet_date, $sick_days, $holiday_days);
+			} else {
+				$billable_days = $this->calendar->get_billable_days_since($last_invoice_date, $timesheet_date + ($this->config['timesheet_lead_time_days'] * 86400), $sick_days, $holiday_days);
+			}
 
 			$entries = $this->calendar->get_days_as_timesheet_entries($billable_days);
 
@@ -85,7 +104,11 @@ Much love,
 				$timesheet->add_day($entry['day'],$entry['date'],$entry['start'],$entry['finish']);
 			}
 
-			$timesheet_filename = str_replace('{{DATE}}',date('Ymd',time()+($this->config['timesheet_lead_time_days'] * 86400)),$this->config['timesheet_filename_format']);
+			if ($justdoit) {
+				$timesheet_filename = str_replace('{{DATE}}',date('Ymd',$timesheet_date),$this->config['timesheet_filename_format']);
+			} else {
+				$timesheet_filename = str_replace('{{DATE}}',date('Ymd',time()+($this->config['timesheet_lead_time_days'] * 86400)),$this->config['timesheet_filename_format']);
+			}
 
 			$timesheet->generate($this->config['timesheet_path'].'/'.$timesheet_filename);
 
@@ -141,6 +164,11 @@ Much love,
 		$subtotal = count($billable_days) * $this->config['day_rate'];
 
 		die("$subtotal\n");
+	}
+
+	function generate() {
+		$this->timesheet(true);
+		$this->invoice(true);
 	}
 }
 
