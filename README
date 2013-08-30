@@ -5,6 +5,7 @@ AutoInvoice automated invoicing system 0.3 beta by http://github.com/m4rkw
 ChangeLog
 =========
 
+0.5 - Fixed a bunch of stuff, added new features, can't remember what they were though :D
 0.4 - Added a new paramter 'today' to dump out the value of an invoice if it were raised today.
 
 Note: new configuration parameters have been added in version 0.3. check your config.
