@@ -1,5 +1,5 @@
 #!/usr/bin/php -q
-<?
+<?php
 require("libraries/Invoice.php");
 require("libraries/Calendar.php");
 require("libraries/Timesheet.php");
@@ -33,10 +33,31 @@ class AutoInvoice {
 
 			$sick_days = $this->calendar->get_sick_days_for_period($last_invoice_date, $invoice_date);
 			$holiday_days = $this->calendar->get_holiday_days_for_period($last_invoice_date, $invoice_date);
-
+			$overtime_days = $this->calendar->get_overtime_days_for_period($last_invoice_date, $invoice_date);
 			$billable_days = $this->calendar->get_billable_days_since($last_invoice_date, $invoice_date, $sick_days, $holiday_days);
 
-			$transactions = $this->calendar->get_days_as_invoice_transactions($billable_days);
+			$invoice_days = array();
+
+			foreach ($billable_days as $day) {
+				$ts = mktime(0,0,0,substr($day,5,2),substr($day,8,2),substr($day,0,4));
+
+				if (isset($overtime_days[$day])) {
+					$invoice_days[$ts] = 1 + $overtime_days[$day];
+					unset($overtime_days[$day]);
+				} else {
+					$invoice_days[$ts] = 1;
+				}
+			}
+
+			foreach ($overtime_days as $day => $days) {
+				$ts = mktime(0,0,0,substr($day,5,2),substr($day,8,2),substr($day,0,4));
+
+				$invoice_days[$ts] = $days;
+			}
+
+			ksort($invoice_days);
+
+			$transactions = $this->calendar->get_days_as_invoice_transactions($invoice_days);
 
 			$invoice = new Invoice($invoice_number);
 
@@ -84,6 +105,7 @@ Much love,
 
 			$sick_days = $this->calendar->get_sick_days_for_period($last_invoice_date, $timesheet_date);
 			$holiday_days = $this->calendar->get_holiday_days_for_period($last_invoice_date, $timesheet_date);
+			$overtime_days = $this->calendar->get_overtime_days_for_period($last_invoice_date, strtotime($next_invoice_date));
 
 			if ($justdoit) {
 				$billable_days = $this->calendar->get_billable_days_since($last_invoice_date, $timesheet_date, $sick_days, $holiday_days);
@@ -91,7 +113,7 @@ Much love,
 				$billable_days = $this->calendar->get_billable_days_since($last_invoice_date, $timesheet_date + ($this->config['timesheet_lead_time_days'] * 86400), $sick_days, $holiday_days);
 			}
 
-			$entries = $this->calendar->get_days_as_timesheet_entries($billable_days);
+			$entries = $this->calendar->get_days_as_timesheet_entries($billable_days, $overtime_days);
 
 			$timesheet = new Timesheet;
 
@@ -123,7 +145,7 @@ Much love,
 				$mail->Subject = str_replace('{{DATE}}',date('d.m.Y',time()+($this->config['timesheet_lead_time_days'] * 86400)),$this->config['timesheet_email_subject']);
 				$mail->Body = "Hi there,
 
-Your new timesheet $timesheet_number has been generated.
+Your new timesheet $timesheet_filename has been generated.
 
 Much love,
 {$this->config['timesheet_email_sender_name']}";
@@ -141,10 +163,10 @@ Much love,
 
 		$sick_days = $this->calendar->get_sick_days_for_period($last_invoice_date, strtotime($next_invoice_date));
 		$holiday_days = $this->calendar->get_holiday_days_for_period($last_invoice_date, strtotime($next_invoice_date));
-
+		$overtime_days = $this->calendar->get_overtime_days_for_period($last_invoice_date, strtotime($next_invoice_date));
 		$billable_days = $this->calendar->get_billable_days_since($last_invoice_date, strtotime($next_invoice_date), $sick_days, $holiday_days);
 
-		$subtotal = count($billable_days) * $this->config['day_rate'];
+		$subtotal = (count($billable_days) * $this->config['day_rate']) + (array_sum($overtime_days) * $this->config['day_rate']);
 		$vat = ($subtotal/100) * $this->config['vat_rate'];
 		$total = $subtotal + $vat;
 
@@ -179,10 +201,10 @@ if ($argc <2) {
 }
 
 if (method_exists('AutoInvoice',$argv[1])) {
-	$a->{$argv[1]}();
+	$a->{$argv[1]}(@$argv[2]);
 } else if ($argv[1] == 'both') {
-	$a->invoice();
-	$a->timesheet();
+	$a->invoice(@$argv[2]);
+	$a->timesheet(@$argv[2]);
 } else {
 	$a->usage();
 }

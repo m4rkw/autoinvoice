@@ -1,4 +1,4 @@
-<?
+<?php
 $config = array(
 	// Your company details
 	'company_name' => 'J R Hartley Ltd',

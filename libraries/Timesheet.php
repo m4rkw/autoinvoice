@@ -1,4 +1,4 @@
-<?
+<?php
 class Timesheet {
 	public $days = array();
 	private $timesheet_template = "../data/timesheet-template.xml";
@@ -133,7 +133,7 @@ class Timesheet {
 			'day' => $day,
 			'date' => $date,
 			'start' => $start,
-			'finish' => $finish
+			'finish' => $finish,
 		);
 	}
 }

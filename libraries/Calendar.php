@@ -1,4 +1,4 @@
-<?
+<?php
 class Calendar {
 	function __construct() {
 		$config = dirname(__FILE__)."/../config/config.php";
@@ -25,6 +25,16 @@ class Calendar {
 
 		if (!isset($this->client)) {
 			$this->client = Zend_Gdata_ClientLogin::getHttpClient($this->config['google_username'], $this->config['google_password'], Zend_Gdata_Calendar::AUTH_SERVICE_NAME);
+			/*
+			$config = array(
+				'adapter'    => 'Zend_Http_Client_Adapter_Proxy', 
+				'proxy_host' => 'localhost',
+				'proxy_port' => 8081,
+			);
+
+			$clientp = new Zend_Http_Client($this->config['google_username'], $config);
+			$this->client = Zend_Gdata_ClientLogin::getHttpClient($this->config['google_username'], $this->config['google_password'], Zend_Gdata_Calendar::AUTH_SERVICE_NAME, $clientp);
+			*/
 		}
 
 		$gdataCal = new Zend_Gdata_Calendar($this->client);
@@ -74,7 +84,7 @@ class Calendar {
 
 	// Return the most recent invoice before the one being generated today
 	function get_date_of_previous_invoice() {
-		foreach ($this->get_calendar_events(time()-(86400 * 90), time()-86400) as $event) {
+		foreach ($this->get_calendar_events(time()-(86400 * 90), time()) as $event) {
 			if (preg_match($this->config['calendar_entry'], $event->title->text, $m)) {
 				foreach ($event->when as $when) {
 					return substr($when->startTime,0,10);
@@ -90,8 +100,12 @@ class Calendar {
 
 		foreach ($this->get_calendar_events($ts, $ts + (90 * 86400), true) as $event) {
 			if (preg_match($this->config['calendar_entry'], $event->title->text, $m)) {
+				$this->invoice_number = $m[1];
+
 				foreach ($event->when as $when) {
-					return substr($when->startTime,0,10);
+					if ($when->startTime != date('Y-m-d')) {
+						return substr($when->startTime,0,10);
+					}
 				}
 			}
 		}
@@ -99,7 +113,7 @@ class Calendar {
 		return false;
 	}
 
-	function get_calendar_marked_entries_for_period($date_from, $timestamp_to, $regex) {
+	function get_calendar_marked_entries_for_period($date_from, $timestamp_to, $regex, $assoc=false) {
 		if (!$timestamp_to) $timestamp_to = time();
 
 		$days = array();
@@ -111,7 +125,12 @@ class Calendar {
 						$ts = strtotime(substr($when->startTime,0,10));
 
 						while (1) {
-							$days[] = date('Y-m-d',$ts);
+							if ($assoc) {
+								$days[date('Y-m-d',$ts)] = $m[1];
+							} else {
+								$days[] = date('Y-m-d',$ts);
+							}
+
 							$ts += 86400;
 							if (date('Y-m-d',$ts) == substr($when->endTime,0,10)) break;
 						}
@@ -129,6 +148,10 @@ class Calendar {
 
 	function get_holiday_days_for_period($date_from, $timestamp_to=false) {
 		return $this->get_calendar_marked_entries_for_period($date_from, $timestamp_to, $this->config['calendar_holiday_entry']);
+	}
+
+	function get_overtime_days_for_period($date_from, $timestamp_to=false) {
+		return $this->get_calendar_marked_entries_for_period($date_from, $timestamp_to, $this->config['calendar_overtime_entry'], true);
 	}
 
 	// return all the billable days from $date_from to $timestamp_to (inclusive)
@@ -158,24 +181,22 @@ class Calendar {
 	function get_days_as_invoice_transactions($days) {
 		$transactions = array();
 
-		foreach ($days as $day) {
-			$timestamp = strtotime($day);
-
+		foreach ($days as $timestamp => $days) {
 			if (!isset($transaction)) {
 				$transaction = array(
 					'title' => date('F jS - ',$timestamp),
-					'days' => 1
+					'days' => $days
 				);
 			} else {
 				if ($last_timestamp+86400 == $timestamp) {
-					$transaction['days']++;
+					$transaction['days'] += $days;
 				} else {
 					$transaction['title'] .= date('F jS',$last_timestamp);
 					$transactions[] = $transaction;
 
 					$transaction = array(
 						'title' => date('F jS - ',$timestamp),
-						'days' => 1
+						'days' => $days
 					);
 				}
 			}
@@ -189,17 +210,45 @@ class Calendar {
 		return $transactions;
 	}
 
-	function get_days_as_timesheet_entries($days) {
+	function get_days_as_timesheet_entries($days, $overtime_days) {
 		$entries = array();
 
 		foreach ($days as $day) {
-			$entries[] = array(
+			$entry = array(
 				'day' => date('l',strtotime($day)),
 				'date' => date('j M Y',strtotime($day)),
 				'start' => $this->config['timesheet_time_start'],
-				'finish' => $this->config['timesheet_time_finish']
+				'finish' => $this->config['timesheet_time_finish'],
 			);
+
+			if (isset($overtime_days[$entry['day']])) {
+				$ex = explode(':',$entry['finish']);
+				$ts = mktime($ex[0],$ex[1],0,date('n',strtotime($day)),date('j',strtotime($day)),date('Y',strtotime($day)));
+				$ts += 3600 * ($overtime_days[$entry['day']] * $this->config['work_day_hours']);
+				$entry['finish'] = date('H:i',$ts);
+				unset($overtime_days[$entry['day']]);
+			}
+
+			$entries[strtotime($day)] = $entry;
 		}
+
+		foreach ($overtime_days as $day => $days) {
+			$entry = array(
+				'day' => date('l',strtotime($day)),
+				'date' => date('j M Y',strtotime($day)),
+				'start' => $this->config['timesheet_time_start'],
+				'finish' => $this->config['timesheet_time_start'],
+			);
+
+			$ex = explode(':',$entry['start']);
+			$ts = mktime($ex[0],$ex[1],0,date('n',strtotime($day)),date('j',strtotime($day)),date('Y',strtotime($day)));
+			$ts += 3600 * ($days * 8);
+			$entry['finish'] = date('H:i',$ts);
+
+			$entries[strtotime($days)] = $entry;
+		}
+
+		ksort($entries);
 
 		return $entries;
 	}

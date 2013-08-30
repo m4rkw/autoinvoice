@@ -1,4 +1,4 @@
-<?
+<?php
 class Invoice {
 	public $transactions = array();
 	private $invoice_template = "../data/invoice-template.xml";
@@ -66,14 +66,15 @@ class Invoice {
 
 		$transactions = '';
 		foreach ($this->transactions as $t) {
-			$transactions .= '<sf:t sf:s="SFTCellStyle-16" sf:w="77.177979" sf:h="15" sf:ct="253">	<sf:ct sfa:s="'.$t['name'].'"/></sf:t>	<sf:n sf:f="4" sf:s="SFTCellStyle-20" sf:w="9.0039978" sf:h="15" sf:v="'.$t['quantity'].'"/>	<sf:n sf:f="4" sf:s="SFTCellStyle-9" sf:w="36.525986" sf:h="15" sf:v="'.$t['unit_price'].'"/>  <sf:f sf:s="SFTCellStyle-15"><sf:fo sf:fs="=B*C"/>  <sf:r><sf:rn sf:f="4" sf:w="36.525986" sf:h="15" sf:v="'.$t['cost'].'"/></sf:r></sf:f>';
+			$transactions .= '<sf:t sf:s="SFTCellStyle-16" sf:w="77.177979" sf:h="15" sf:ct="253">	<sf:ct sfa:s="'.$t['name'].'"/></sf:t>	<sf:n sf:f="4" sf:s="SFTCellStyle-20" sf:w="16.509995" sf:h="15" sf:v="'.$t['quantity'].'"/>	<sf:n sf:f="4" sf:s="SFTCellStyle-9" sf:w="36.525986" sf:h="15" sf:v="'.$t['unit_price'].'"/>  <sf:f sf:s="SFTCellStyle-15"><sf:fo sf:fs="=B*C"/>  <sf:r><sf:rn sf:f="4" sf:w="36.525986" sf:h="15" sf:v="'.$t['cost'].'"/></sf:r></sf:f>';
+			//$transactions .= '<sf:t sf:s="SFTCellStyle-18" sf:w="77.177979" sf:h="15" sf:ct="253"><sf:ct sfa:s="'.$t['name'].'"/></sf:t><sf:n sf:s="SFTCellStyle-18" sf:w="16.509995" sf:h="15" sf:v="'.$t['quantity'].'"><sf:cf sf:implicit-format-type="256"><sf:number-format sf:format-type="0" sf:format-string="#,##0.###;-#,##0.###" sf:format-decimal-places="1" sf:format-currency-code="GBP" sf:format-negative-style="0" sf:format-show-thousands-separator="false" sf:format-fraction-accuracy="-3" sf:format-use-accounting-style="false"/></sf:cf></sf:n><sf:n sf:f="4" sf:s="SFTCellStyle-19" sf:w="36.525986" sf:h="15" sf:v="'.$t['unit_price'].'"/><sf:f sf:s="SFTCellStyle-10"><sf:fo sf:fs="=B*C"/><sf:r><sf:rn sf:f="4" sf:w="44.031982" sf:h="15" sf:v="'.$t['cost'].'"/></sf:r></sf:f>';
 			$subtotal += $t['cost'];
 		}
 
 		$this->template = str_replace('{{{TRANSACTIONS}}}',$transactions,$this->template);
 
 		foreach ($this as $fieldname => $value) {
-			if ($fieldname != 'template') {
+			if (!in_array($fieldname,array('template','transactions'))) {
 				$this->template = str_replace('{{{'.strtoupper($fieldname).'}}}',$value,$this->template);
 			}
 		}

@@ -1,4 +1,4 @@
-<?
+<?php
 class BankHolidays {
 	static public function get($yr) {
 		$bankHols = Array();
